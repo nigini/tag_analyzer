@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <script>
+    // IMPORTANT: Replace the value for DEVELOPER_KEY with the API key obtained
+    // from the Google Developers Console.
+    var DEVELOPER_KEY = '';
+    var DIALOG_DIMENSIONS = {width: 600, height: 425};
+    var pickerApiLoaded = false;
+
+    /**
+     * Loads the Google Picker API.
+     */
+    function onApiLoad() {
+      gapi.load('picker', {'callback': function() {
+        pickerApiLoaded = true;
+      }});
+     }
+
+    /**
+     * Gets the user's OAuth 2.0 access token from the server-side script so that
+     * it can be passed to Picker. This technique keeps Picker from needing to
+     * show its own authorization dialog, but is only possible if the OAuth scope
+     * that Picker needs is available in Apps Script. Otherwise, your Picker code
+     * will need to declare its own OAuth scopes.
+     */
+    function getOAuthToken() {
+      google.script.run.withSuccessHandler(createPicker)
+          .withFailureHandler(showError).getOAuthToken();
+    }
+
+    /**
+     * Creates a Picker that can access the user's spreadsheets. This function
+     * uses advanced options to hide the Picker's left navigation panel and
+     * default title bar.
+     *
+     * @param {string} token An OAuth 2.0 access token that lets Picker access the
+     *     file type specified in the addView call.
+     */
+    function createPicker(token) {
+      if (pickerApiLoaded && token) {
+        var picker = new google.picker.PickerBuilder()
+            // Instruct Picker to display only spreadsheets in Drive. For other
+            // views, see https://developers.google.com/picker/docs/#otherviews
+            .addViewGroup(new google.picker.ViewGroup(google.picker.ViewId.DOCS)
+                .addView(google.picker.ViewId.DOCUMENTS)
+                .addView(google.picker.ViewId.SPREADSHEETS))
+            // Hide the navigation panel so that Picker fills more of the dialog.
+            .enableFeature(google.picker.Feature.NAV_HIDDEN)
+            // Hide the title bar since an Apps Script dialog already has a title.
+            .hideTitleBar()
+            .setOAuthToken(token)
+            .setDeveloperKey(DEVELOPER_KEY)
+            .setCallback(pickerCallback)
+            .setOrigin(google.script.host.origin)
+            // Instruct Picker to fill the dialog, minus 2 pixels for the border.
+            .setSize(DIALOG_DIMENSIONS.width - 2,
+                DIALOG_DIMENSIONS.height - 2)
+            .build();
+        picker.setVisible(true);
+      } else {
+        showError('Unable to load the file picker.');
+      }
+    }
+
+    /**
+     * A callback function that extracts the chosen document's metadata from the
+     * response object. For details on the response object, see
+     * https://developers.google.com/picker/docs/result
+     *
+     * @param {object} data The response object.
+     */
+    function pickerCallback(data) {
+      var action = data[google.picker.Response.ACTION];
+      var id = null;
+      if (action == google.picker.Action.PICKED) {
+        var doc = data[google.picker.Response.DOCUMENTS][0];
+        var docId = doc[google.picker.Document.ID];
+        var docName = doc[google.picker.Document.NAME];
+        google.script.run.withSuccessHandler(refreshAssociatedDocsList).addDocToSheet(docId,docName);
+      }
+    }
+
+    /**
+     * Displays an error message within the #result element.
+     *
+     * @param {string} message The error message to display.
+     */
+    function showError(message) {
+      document.getElementById('result').innerHTML = 'Error: ' + message;
+    }
+
+
+    function refreshAssociatedDocsList() {
+      google.script.run.withSuccessHandler(updateDocsTable).getActiveSheetDocs();
+    }
+    
+    function unlistDoc(docID) {
+      console.log("UNLIST: "+ docID);
+      google.script.run.withSuccessHandler(refreshAssociatedDocsList).removeDocFromSheet(docID);
+    }
+
+    function updateDocsTable(docs) {
+      var HTMLList = "";
+      if(Object.keys(docs).length>0) {
+        HTMLList = "<tr><th>Name</th><th>Unlist</th></tr>";
+        for (var key in docs) {
+          HTMLList += "<tr>";
+          HTMLList += "<td><a href=\"https://docs.google.com/document/d/"+key+"\" target=\"_blank\">"+docs[key]+"</a></td>";
+          HTMLList += "<td><span class=\"glyphicon glyphicon-remove\" onclick='unlistDoc(\""+key+"\")'></span></td>";
+          HTMLList += "</tr>";
+        }
+      }
+      document.getElementById('docs_table').innerHTML = HTMLList;
+      google.script.run.processDocs();
+    }
+
+  </script>
+</head>
+<body onload="refreshAssociatedDocsList()">
+  <div id="table" class="table">
+    <table id="docs_table">
+    </table>
+  </div>
+  <div>
+    <button onclick='getOAuthToken()'>Add a Doc</button>
+    <!--button onclick='google.script.run.processDocs()'>Refresh data</button-->
+    <p id='result'></p>
+  </div>
+  <script src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+</body>
+</html>

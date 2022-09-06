@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js" ></script>
+    <script type="text/javascript">
+      $(document).keydown(function(e){
+        //SHIFT + CTRL + ALT + T keydown combo
+        if(e.keyCode == 16 && e.keyCode == 17 && e.keyCode == 18 && e.keyCode == 84){
+          google.script.run.editTags();
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <? var tagCount = getTagCount(); ?>
+    <table>
+      <? for (var tag=0; tag < tagCount.length; tag++) { ?>
+        <tr>
+            <td><?= tagCount[tag].key; ?></td>
+            <td><?= tagCount[tag].value; ?></td>
+        </tr>
+      <? } ?>
+    </table>
+  </body>
+</html>

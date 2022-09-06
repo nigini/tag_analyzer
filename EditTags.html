@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <strong>Edit #tags and hit GO!</strong><br>
+    <br>
+    <?=message?><br>
+    <br>
+    <div id="form">
+      <input type="radio" name="whichTag" value="one" onclick="selectOne()" checked>This instance<br>
+      <input type="radio" name="whichTag" value="all" onclick="selectAll()">All instances<br>
+
+      <input type="text" id="tag" name="newTagValue" value="<?=tag?>" style="display: none"><br>
+      <textarea id="tags" rows="4" cols="40"><?=tags?></textarea><br>
+      <input type="hidden" id="doc_id" value="<?=doc_id?>">
+      <input type="hidden" id="com_id" value="<?=com_id?>">
+      <input type="hidden" id="submit_as" value="<?=submit_as?>">
+      <input type="hidden" id="selected_tag" value="<?=tag?>">
+      
+      <button onclick="saveTags()">GO!</button>
+    </div>
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" ></script>
+    <script type="text/javascript">
+      function selectOne(){
+        $("#tag").hide();
+        $("#tags").show();
+      }
+      
+      function selectAll(){
+        $("#tags").hide();
+        $("#tag").show();
+      }
+    
+      function saveTags(){
+        operation = $('input[name=whichTag]:checked').val();
+        if(operation === "one"){
+          google.script.run.saveTagEdition($('#tags').val(),$('#doc_id').val(),$('#com_id').val(), null, $('#submit_as').val());
+          google.script.run.updatedCommentTags($('#doc_id').val(), $('#com_id').val(), null);
+        } else {
+          google.script.run.changeAllInstancesOfTag($('#selected_tag').val(), $('#tag').val())
+        }
+        google.script.host.close();
+      }
+    </script>
+
+  </body>
+</html>
+
+

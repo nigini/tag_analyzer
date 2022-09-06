@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <base target="_top">
+    <script>
+    function updateCodesList(codes) {
+      console.log("UPDATE1: " + Object.keys(codes));
+      var HTMLList = "";
+      Object.keys(codes).forEach(function(key){
+        console.log("UPDATE2: " + Object.keys(codes[key]));
+        var code = codes[key];
+        HTMLList += "<p>";
+        HTMLList += "<a href=\"#\" onclick='google.script.run.goToBookmark(" + key + ")'>[BOOKMARK]</a><br>";
+        HTMLList += "<span>"+ code.codes +"</span><br>";
+        HTMLList += "<span>"+ code.selection.join(" ") +"</span><br>";
+        HTMLList += "</p>";
+      });
+      document.getElementById('codes').innerHTML = HTMLList;
+    }
+    
+    function refreshView() {
+      console.log("REFRESH!");
+      google.script.run.withSuccessHandler(updateCodesList).getCodes();
+    }
+
+    </script>
+  </head>
+  <body onload="refreshView()">
+    <div id="codes">
+    </div>
+  <div>
+    <!--button onclick='getOAuthToken()'>Add a Doc</button-->
+    <!--button onclick='google.script.run.processDocs()'>Refresh data</button-->
+    <p id='result'></p>
+  </div>
+  <script src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+  
+  </body>
+</html>
+
+
